@@ -29,11 +29,21 @@ async function run() {
     const studentCollections = db.collection('studentInfo');
 
     // studentInfo API
-    app.get('/studentInfo', async (req, res) => {});
+    app.get('/studentInfo', async (req, res) => {
+      const query = {};
+
+      const { email } = req.query;
+      if (email) {
+        query.email = email;
+      }
+      const cursor = studentCollections.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
 
     app.post('/studentInfo', async (req, res) => {
-      const studentInfo = req.body;
-      const result = await studentCollections.insertOne(studentInfo);
+      console.log(req.body); // 👈 এখানে আসছে কি?
+      const result = await studentCollections.insertOne(req.body);
       res.send(result);
     });
 
