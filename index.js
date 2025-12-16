@@ -1,5 +1,5 @@
 const express = require('express');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const cors = require('cors');
 const app = express();
 require('dotenv').config();
@@ -28,7 +28,7 @@ async function run() {
     const db = client.db('e_tuition-db');
     const studentCollections = db.collection('studentInfo');
 
-    // studentInfo API
+    // studentInfo get API
     app.get('/studentInfo', async (req, res) => {
       const query = {};
 
@@ -36,14 +36,30 @@ async function run() {
       if (email) {
         query.email = email;
       }
-      const cursor = studentCollections.find(query);
+
+      const options = {
+        sort: {
+          createdAt: -1,
+        },
+      };
+
+      const cursor = studentCollections.find(query, options);
       const result = await cursor.toArray();
       res.send(result);
     });
-
+    // studentInfo  post api
     app.post('/studentInfo', async (req, res) => {
-      console.log(req.body); // 👈 এখানে আসছে কি?
-      const result = await studentCollections.insertOne(req.body);
+      student = req.body;
+      student.createdAt = new Date();
+      const result = await studentCollections.insertOne(student);
+      res.send(result);
+    });
+
+    // studentInfo  delet api
+    app.delete('/studentInfo/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await studentCollections.deleteOne(query);
       res.send(result);
     });
 
