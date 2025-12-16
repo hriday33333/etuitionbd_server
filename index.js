@@ -47,6 +47,15 @@ async function run() {
       const result = await cursor.toArray();
       res.send(result);
     });
+
+    // studentInfo get id API
+    app.get('/studentInfo/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await studentCollections.findOne(query);
+      res.send(result);
+    });
+
     // studentInfo  post api
     app.post('/studentInfo', async (req, res) => {
       student = req.body;
