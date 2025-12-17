@@ -73,15 +73,32 @@ async function run() {
       res.send(result);
     });
 
-    // new payment related api
-    app.post('/payment-checkout-session',async(req,res)=>{
-        const paymentInfo = req.body;
-        const session = await stripe.checkout.sessions.create({
-          
-        })
-    })
-
-
+    // // new payment related api
+    // app.post('/payment-checkout-session', async (req, res) => {
+    //   const paymentInfo = req.body;
+    //   const amount = parseInt(paymentInfo.budget) * 100;
+    //   const session = await stripe.checkout.sessions.create({
+    //     line_items: [
+    //       {
+    //         price_data: {
+    //           currency: 'USD',
+    //           unit_amount: amount,
+    //           product_data: {
+    //             name: `pleace pay for:${paymentInfo.studentName}`,
+    //           },
+    //         },
+    //         quantity: 1,
+    //       },
+    //     ],
+    //     mode: 'payment',
+    //     metadata: {
+    //       studentId: paymentInfo.studentId,
+    //     },
+    //     customer_email: paymentInfo.senderEmail,
+    //     success_url: `${process.env.SITE_DOMAIN}/dashboard/payment-success?success=true`,
+    //     cancel_url: `${process.env.SITE_DOMAIN}/dashboard/payment-cancelled`,
+    //   });
+    // });
 
     // payment related api   old
     app.post('/create-checkout-session', async (req, res) => {
@@ -106,7 +123,7 @@ async function run() {
         metadata: {
           studentId: paymentInfo.studentId,
         },
-        success_url: `${process.env.SITE_DOMAIN}/dashboard/payment-success`,
+        success_url: `${process.env.SITE_DOMAIN}/dashboard/payment-success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${process.env.SITE_DOMAIN}/dashboard/payment-cancelled`,
       });
       console.log(session);
