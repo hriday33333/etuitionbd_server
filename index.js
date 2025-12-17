@@ -5,6 +5,14 @@ const app = express();
 require('dotenv').config();
 const port = process.env.PORT || 3000;
 const stripe = require('stripe')(process.env.STRIPE_SECRET);
+const crypto = require('crypto');
+
+function generateTrackingId() {
+  const prefix = 'PRCL';
+  const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  const random = crypto.randomBytes(3).toString('hex').toUpperCase();
+  return `${prefix}-${date}-${random}`;
+}
 
 // middlewere
 app.use(cors());
@@ -28,6 +36,7 @@ async function run() {
 
     const db = client.db('e_tuition-db');
     const studentCollections = db.collection('studentInfo');
+    const paymentCollection = db.collection('payment');
 
     // studentInfo get API
     app.get('/studentInfo', async (req, res) => {
@@ -122,12 +131,68 @@ async function run() {
         mode: 'payment',
         metadata: {
           studentId: paymentInfo.studentId,
+          studentName: paymentInfo.studentName,
         },
         success_url: `${process.env.SITE_DOMAIN}/dashboard/payment-success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${process.env.SITE_DOMAIN}/dashboard/payment-cancelled`,
       });
       console.log(session);
       res.send({ url: session.url });
+    });
+
+    app.patch('/payment-success', async (req, res) => {
+      const sessionId = req.query.session_id;
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+      // console.log('session retrieve', session);
+
+      const transsactionId = session.payment_intent;
+      const query = { transsactionId: transsactionId };
+      const paymentExist = await paymentCollection.findOne(query);
+      if (paymentExist) {
+        return res.send({
+          message: 'already exists',
+          transsactionId,
+          trackingId: paymentExist.trackingId,
+        });
+      }
+
+      const trackingId = generateTrackingId();
+      if (session.payment_status === 'paid') {
+        const id = session.metadata.studentId;
+        const query = { _id: new ObjectId(id) };
+        const update = {
+          $set: {
+            paymentStatus: 'paid',
+            trackingId: trackingId,
+          },
+        };
+        const result = await studentCollections.updateOne(query, update);
+
+        const payment = {
+          amount: session.amount_total / 100,
+          currency: session.currency,
+          customerEmail: session.customer_email,
+          studentId: session.metadata.studentId,
+          studentName: session.metadata.studentName,
+          transsactionId: session.payment_intent,
+          paymentStatus: session.payment_status,
+          paidAt: new Date(),
+          trackingId: trackingId,
+        };
+
+        if (session.payment_status === 'paid') {
+          const resultPayment = await paymentCollection.insertOne(payment);
+          res.send({
+            success: true,
+            trackingId: trackingId,
+            transsactionId: session.payment_intent,
+            modifystudent: result,
+            paymentInfo: resultPayment,
+          });
+        }
+      }
+
+      res.send({ success: false });
     });
 
     // Send a ping to confirm a successful connection
