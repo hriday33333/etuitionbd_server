@@ -4,6 +4,7 @@ const cors = require('cors');
 const app = express();
 require('dotenv').config();
 const port = process.env.PORT || 3000;
+const stripe = require('stripe')(process.env.STRIPE_SECRET);
 
 // middlewere
 app.use(cors());
@@ -58,7 +59,7 @@ async function run() {
 
     // studentInfo  post api
     app.post('/studentInfo', async (req, res) => {
-      student = req.body;
+      const student = req.body;
       student.createdAt = new Date();
       const result = await studentCollections.insertOne(student);
       res.send(result);
@@ -70,6 +71,46 @@ async function run() {
       const query = { _id: new ObjectId(id) };
       const result = await studentCollections.deleteOne(query);
       res.send(result);
+    });
+
+    // new payment related api
+    app.post('/payment-checkout-session',async(req,res)=>{
+        const paymentInfo = req.body;
+        const session = await stripe.checkout.sessions.create({
+          
+        })
+    })
+
+
+
+    // payment related api   old
+    app.post('/create-checkout-session', async (req, res) => {
+      const paymentInfo = req.body;
+      const amount = parseInt(paymentInfo.budget) * 100;
+      const session = await stripe.checkout.sessions.create({
+        line_items: [
+          {
+            price_data: {
+              currency: 'USD',
+              unit_amount: amount,
+              product_data: {
+                name: paymentInfo.studentName,
+              },
+            },
+
+            quantity: 1,
+          },
+        ],
+        customer_email: paymentInfo.senderEmail,
+        mode: 'payment',
+        metadata: {
+          studentId: paymentInfo.studentId,
+        },
+        success_url: `${process.env.SITE_DOMAIN}/dashboard/payment-success`,
+        cancel_url: `${process.env.SITE_DOMAIN}/dashboard/payment-cancelled`,
+      });
+      console.log(session);
+      res.send({ url: session.url });
     });
 
     // Send a ping to confirm a successful connection
