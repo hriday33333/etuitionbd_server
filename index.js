@@ -61,8 +61,24 @@ async function run() {
     await client.connect();
 
     const db = client.db('e_tuition-db');
+    const userCollections = db.collection('userInfo');
     const studentCollections = db.collection('studentInfo');
     const paymentCollection = db.collection('payment');
+
+    // user related api
+    app.post('/userInfo', async (req, res) => {
+      const user = req.body;
+      user.role = 'user';
+      user.createdAt = new Date();
+      const email = user.email;
+      const userExists = await userCollections.findOne({ email });
+      if (userExists) {
+        return res.send({ message: 'users exists' });
+      }
+
+      const result = await userCollections.insertOne(user);
+      res.send(result);
+    });
 
     // studentInfo get API
     app.get('/studentInfo', async (req, res) => {
