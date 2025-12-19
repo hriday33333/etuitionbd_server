@@ -67,6 +67,13 @@ async function run() {
     const paymentCollection = db.collection('payment');
 
     // user related api
+
+    app.get('/userInfo', verifyFBToken, async (req, res) => {
+      const cursor = userCollections.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
     app.post('/userInfo', async (req, res) => {
       const user = req.body;
       user.role = 'user';
@@ -78,6 +85,18 @@ async function run() {
       }
 
       const result = await userCollections.insertOne(user);
+      res.send(result);
+    });
+    app.patch('/userInfo/:id', async (req, res) => {
+      const id = req.params.id;
+      const roleInfo = req.body;
+      const query = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          role: roleInfo.role,
+        },
+      };
+      const result = await userCollections.updateOne(query, updatedDoc);
       res.send(result);
     });
 
