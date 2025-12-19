@@ -63,6 +63,7 @@ async function run() {
     const db = client.db('e_tuition-db');
     const userCollections = db.collection('userInfo');
     const studentCollections = db.collection('studentInfo');
+    const tuitorCollections = db.collection('tutorApplications');
     const paymentCollection = db.collection('payment');
 
     // user related api
@@ -252,6 +253,15 @@ async function run() {
       }
       const cursor = paymentCollection.find(query).sort({ paidAt: -1 });
       const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    // tutorApplications api
+    app.post('/tutorApplications', async (req, res) => {
+      const tuitor = req.body;
+      tuitor.status = 'pending';
+      tuitor.createdAt = new Date();
+      const result = await tuitorCollections.insertOne(tuitor);
       res.send(result);
     });
 
