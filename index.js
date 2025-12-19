@@ -66,12 +66,33 @@ async function run() {
     const tuitorCollections = db.collection('tutorApplications');
     const paymentCollection = db.collection('payment');
 
+    // middle more with database access
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.decoded_email;
+      const query = { email };
+      const user = await userCollections.findOne(query);
+
+      if (!user || user.role !== 'admin') {
+        return res.status(403).send({ message: 'forbidden access' });
+      }
+
+      next();
+    };
+
     // user related api
 
     app.get('/userInfo', verifyFBToken, async (req, res) => {
       const cursor = userCollections.find();
       const result = await cursor.toArray();
       res.send(result);
+    });
+
+    app.get('/userInfo/:id', async (req, res) => {});
+    app.get('/userInfo/:email/role', async (req, res) => {
+      const email = req.params.email;
+      const query = { email };
+      const user = await userCollections.findOne(query);
+      res.send({ role: user?.role || 'user' });
     });
 
     app.post('/userInfo', async (req, res) => {
@@ -87,18 +108,23 @@ async function run() {
       const result = await userCollections.insertOne(user);
       res.send(result);
     });
-    app.patch('/userInfo/:id', async (req, res) => {
-      const id = req.params.id;
-      const roleInfo = req.body;
-      const query = { _id: new ObjectId(id) };
-      const updatedDoc = {
-        $set: {
-          role: roleInfo.role,
-        },
-      };
-      const result = await userCollections.updateOne(query, updatedDoc);
-      res.send(result);
-    });
+    app.patch(
+      '/userInfo/:id/role',
+      verifyFBToken,
+      verifyAdmin,
+      async (req, res) => {
+        const id = req.params.id;
+        const roleInfo = req.body;
+        const query = { _id: new ObjectId(id) };
+        const updatedDoc = {
+          $set: {
+            role: roleInfo.role,
+          },
+        };
+        const result = await userCollections.updateOne(query, updatedDoc);
+        res.send(result);
+      }
+    );
 
     // studentInfo get API
     app.get('/studentInfo', async (req, res) => {
@@ -286,31 +312,36 @@ async function run() {
     });
 
     // patch
-    app.patch('/tutorApplications/:id', verifyFBToken, async (req, res) => {
-      const status = req.body.status;
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const updatedDoc = {
-        $set: {
-          status: status,
-        },
-      };
-      const result = await tuitorCollections.updateOne(query, updatedDoc);
-      if (status === 'approved') {
-        const email = req.body.email;
-        userQuery = { email };
-        const updateUser = {
+    app.patch(
+      '/tutorApplications/:id',
+      verifyFBToken,
+      verifyAdmin,
+      async (req, res) => {
+        const status = req.body.status;
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const updatedDoc = {
           $set: {
-            role: 'tuitor',
+            status: status,
           },
         };
-        const userResult = await userCollections.updateOne(
-          userQuery,
-          updateUser
-        );
+        const result = await tuitorCollections.updateOne(query, updatedDoc);
+        if (status === 'approved') {
+          const email = req.body.email;
+          userQuery = { email };
+          const updateUser = {
+            $set: {
+              role: 'tuitor',
+            },
+          };
+          const userResult = await userCollections.updateOne(
+            userQuery,
+            updateUser
+          );
+        }
+        res.send(result);
       }
-      res.send(result);
-    });
+    );
 
     // get
     app.get('/tutorApplications', async (req, res) => {
