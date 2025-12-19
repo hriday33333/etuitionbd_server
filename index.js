@@ -79,7 +79,7 @@ async function run() {
       next();
     };
 
-    // user related api
+    // user  api
 
     app.get('/userInfo', verifyFBToken, async (req, res) => {
       const cursor = userCollections.find();
@@ -126,13 +126,17 @@ async function run() {
       }
     );
 
-    // studentInfo get API
+    // studentInfo  API
     app.get('/studentInfo', async (req, res) => {
       const query = {};
 
-      const { email } = req.query;
+      const { email, deliveryStatus } = req.query;
       if (email) {
         query.email = email;
+      }
+
+      if (deliveryStatus) {
+        query.deliveryStatus = deliveryStatus;
       }
 
       const options = {
@@ -145,24 +149,18 @@ async function run() {
       const result = await cursor.toArray();
       res.send(result);
     });
-
-    // studentInfo get id API
     app.get('/studentInfo/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await studentCollections.findOne(query);
       res.send(result);
     });
-
-    // studentInfo  post api
     app.post('/studentInfo', async (req, res) => {
       const student = req.body;
       student.createdAt = new Date();
       const result = await studentCollections.insertOne(student);
       res.send(result);
     });
-
-    // studentInfo  delet api
     app.delete('/studentInfo/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -170,7 +168,7 @@ async function run() {
       res.send(result);
     });
 
-    // // new payment related api
+    // // new payment  api
     // app.post('/payment-checkout-session', async (req, res) => {
     //   const paymentInfo = req.body;
     //   const amount = parseInt(paymentInfo.budget) * 100;
@@ -227,7 +225,6 @@ async function run() {
       console.log(session);
       res.send({ url: session.url });
     });
-
     app.patch('/payment-success', async (req, res) => {
       const sessionId = req.query.session_id;
       const session = await stripe.checkout.sessions.retrieve(sessionId);
@@ -251,6 +248,7 @@ async function run() {
         const update = {
           $set: {
             paymentStatus: 'paid',
+            deliveryStatus: 'pending',
             trackingId: trackingId,
           },
         };
@@ -282,7 +280,6 @@ async function run() {
 
       res.send({ success: false });
     });
-
     app.get('/payment', verifyFBToken, async (req, res) => {
       const email = req.query.email;
       const query = {};
@@ -302,7 +299,7 @@ async function run() {
     });
 
     // tutorApplications api
-    // post
+
     app.post('/tutorApplications', async (req, res) => {
       const tuitor = req.body;
       tuitor.status = 'pending';
@@ -310,8 +307,6 @@ async function run() {
       const result = await tuitorCollections.insertOne(tuitor);
       res.send(result);
     });
-
-    // patch
     app.patch(
       '/tutorApplications/:id',
       verifyFBToken,
@@ -342,8 +337,6 @@ async function run() {
         res.send(result);
       }
     );
-
-    // get
     app.get('/tutorApplications', async (req, res) => {
       const query = {};
       if (req.query.status) {
