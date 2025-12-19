@@ -257,11 +257,51 @@ async function run() {
     });
 
     // tutorApplications api
+    // post
     app.post('/tutorApplications', async (req, res) => {
       const tuitor = req.body;
       tuitor.status = 'pending';
       tuitor.createdAt = new Date();
       const result = await tuitorCollections.insertOne(tuitor);
+      res.send(result);
+    });
+
+    // patch
+    app.patch('/tutorApplications/:id', verifyFBToken, async (req, res) => {
+      const status = req.body.status;
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          status: status,
+        },
+      };
+      const result = await tuitorCollections.updateOne(query, updatedDoc);
+      if (status === 'approved') {
+        const email = req.body.email;
+        userQuery = { email };
+        const updateUser = {
+          $set: {
+            role: 'tuitor',
+          },
+        };
+        const userResult = await userCollections.updateOne(
+          userQuery,
+          updateUser
+        );
+      }
+      res.send(result);
+    });
+
+    // get
+    app.get('/tutorApplications', async (req, res) => {
+      const query = {};
+      if (req.query.status) {
+        query.status = req.query.status;
+      }
+      const cursor = tuitorCollections.find(query);
+
+      const result = await cursor.toArray();
       res.send(result);
     });
 
