@@ -307,6 +307,7 @@ async function run() {
       const result = await tuitorCollections.insertOne(tuitor);
       res.send(result);
     });
+
     app.patch(
       '/tutorApplications/:id',
       verifyFBToken,
@@ -318,6 +319,7 @@ async function run() {
         const updatedDoc = {
           $set: {
             status: status,
+            workStatus: 'available',
           },
         };
         const result = await tuitorCollections.updateOne(query, updatedDoc);
@@ -337,6 +339,57 @@ async function run() {
         res.send(result);
       }
     );
+
+    // Delete tutor application
+    app.delete(
+      '/tutorApplications/:id',
+      verifyFBToken,
+      verifyAdmin,
+      async (req, res) => {
+        try {
+          const id = req.params.id;
+          const result = await tuitorCollections.deleteOne({
+            _id: new ObjectId(id),
+          });
+          if (result.deletedCount) {
+            return res.send({
+              success: true,
+              message: 'Tutor application deleted',
+            });
+          }
+          res.status(404).send({ success: false, message: 'Tutor not found' });
+        } catch (err) {
+          console.error(err);
+          res.status(500).send({ success: false, message: 'Server error' });
+        }
+      }
+    );
+
+    // Get single tutor application
+    app.get(
+      '/tutorApplications/:id',
+      verifyFBToken,
+      verifyAdmin,
+      async (req, res) => {
+        try {
+          const id = req.params.id;
+          const tutor = await tuitorCollections.findOne({
+            _id: new ObjectId(id),
+          });
+          if (!tutor)
+            return res
+              .status(404)
+              .send({ success: false, message: 'Tutor not found' });
+          res.send({ success: true, tutor });
+        } catch (err) {
+          console.error(err);
+          res.status(500).send({ success: false, message: 'Server error' });
+        }
+      }
+    );
+
+
+    
     app.get('/tutorApplications', async (req, res) => {
       const query = {};
       if (req.query.status) {
