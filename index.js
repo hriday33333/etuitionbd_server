@@ -168,6 +168,31 @@ async function run() {
       res.send(result);
     });
 
+    app.patch('/studentInfo/:id', async (req, res) => {
+      const { tutorId, tutorName, tutorEmail } = req.body;
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+
+      const updatedDoc = {
+        $set: {
+          deliveryStatus: 'tuitor_applied',
+          tutorId: tutorId,
+          tutorName: tutorName,
+          tutorEmail: tutorEmail,
+        },
+      };
+      const reault = await studentCollections.updateOne(query, updatedDoc);
+
+      const tuitorQuery = { _id: new ObjectId(tutorId) };
+      const tuitorUpdatedDoc={
+        $set:{
+          workStatus:'ongoing'
+        }
+      }
+      const tuitorRuselt =await tuitorCollections.updateOne(tuitorQuery,tuitorUpdatedDoc)
+      res.send(tuitorRuselt)
+    });
+
     // // new payment  api
     // app.post('/payment-checkout-session', async (req, res) => {
     //   const paymentInfo = req.body;
@@ -341,60 +366,66 @@ async function run() {
     );
 
     // Delete tutor application
-    app.delete(
-      '/tutorApplications/:id',
-      verifyFBToken,
-      verifyAdmin,
-      async (req, res) => {
-        try {
-          const id = req.params.id;
-          const result = await tuitorCollections.deleteOne({
-            _id: new ObjectId(id),
-          });
-          if (result.deletedCount) {
-            return res.send({
-              success: true,
-              message: 'Tutor application deleted',
-            });
-          }
-          res.status(404).send({ success: false, message: 'Tutor not found' });
-        } catch (err) {
-          console.error(err);
-          res.status(500).send({ success: false, message: 'Server error' });
-        }
-      }
-    );
+    // app.delete(
+    //   '/tutorApplications/:id',
+    //   verifyFBToken,
+    //   verifyAdmin,
+    //   async (req, res) => {
+    //     try {
+    //       const id = req.params.id;
+    //       const result = await tuitorCollections.deleteOne({
+    //         _id: new ObjectId(id),
+    //       });
+    //       if (result.deletedCount) {
+    //         return res.send({
+    //           success: true,
+    //           message: 'Tutor application deleted',
+    //         });
+    //       }
+    //       res.status(404).send({ success: false, message: 'Tutor not found' });
+    //     } catch (err) {
+    //       console.error(err);
+    //       res.status(500).send({ success: false, message: 'Server error' });
+    //     }
+    //   }
+    // );
 
     // Get single tutor application
-    app.get(
-      '/tutorApplications/:id',
-      verifyFBToken,
-      verifyAdmin,
-      async (req, res) => {
-        try {
-          const id = req.params.id;
-          const tutor = await tuitorCollections.findOne({
-            _id: new ObjectId(id),
-          });
-          if (!tutor)
-            return res
-              .status(404)
-              .send({ success: false, message: 'Tutor not found' });
-          res.send({ success: true, tutor });
-        } catch (err) {
-          console.error(err);
-          res.status(500).send({ success: false, message: 'Server error' });
-        }
-      }
-    );
+    // app.get(
+    //   '/tutorApplications/:id',
+    //   verifyFBToken,
+    //   verifyAdmin,
+    //   async (req, res) => {
+    //     try {
+    //       const id = req.params.id;
+    //       const tutor = await tuitorCollections.findOne({
+    //         _id: new ObjectId(id),
+    //       });
+    //       if (!tutor)
+    //         return res
+    //           .status(404)
+    //           .send({ success: false, message: 'Tutor not found' });
+    //       res.send({ success: true, tutor });
+    //     } catch (err) {
+    //       console.error(err);
+    //       res.status(500).send({ success: false, message: 'Server error' });
+    //     }
+    //   }
+    // );
 
-
-    
     app.get('/tutorApplications', async (req, res) => {
+      const { status, district, workStatus } = req.query;
       const query = {};
-      if (req.query.status) {
-        query.status = req.query.status;
+      if (status) {
+        query.status = status;
       }
+      if (district) {
+        query.district = district;
+      }
+      if (workStatus) {
+        query.workStatus = workStatus;
+      }
+
       const cursor = tuitorCollections.find(query);
 
       const result = await cursor.toArray();
