@@ -9,7 +9,11 @@ const crypto = require('crypto');
 
 const admin = require('firebase-admin');
 
-const serviceAccount = require('./etuitionbd-7ef5f-firebase-adminsdk-fbsvc-b4a2ccf811.json');
+// const serviceAccount = require('./etuitionbd-7ef5f-firebase-adminsdk-fbsvc-b4a2ccf811.json');
+// const serviceAccount = require("./firebase-admin-key.json");
+
+const decoded = Buffer.from(process.env.FB_SERVICE_KEY, 'base64').toString('utf8')
+const serviceAccount = JSON.parse(decoded);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -58,7 +62,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     const db = client.db('e_tuition-db');
     const userCollections = db.collection('userInfo');
@@ -396,52 +400,52 @@ app.get('/studentInfo/tutor', async (req, res) => {
     );
 
     // Delete tutor application
-    // app.delete(
-    //   '/tutorApplications/:id',
-    //   verifyFBToken,
-    //   verifyAdmin,
-    //   async (req, res) => {
-    //     try {
-    //       const id = req.params.id;
-    //       const result = await tuitorCollections.deleteOne({
-    //         _id: new ObjectId(id),
-    //       });
-    //       if (result.deletedCount) {
-    //         return res.send({
-    //           success: true,
-    //           message: 'Tutor application deleted',
-    //         });
-    //       }
-    //       res.status(404).send({ success: false, message: 'Tutor not found' });
-    //     } catch (err) {
-    //       console.error(err);
-    //       res.status(500).send({ success: false, message: 'Server error' });
-    //     }
-    //   }
-    // );
+    app.delete(
+      '/tutorApplications/:id',
+      verifyFBToken,
+      verifyAdmin,
+      async (req, res) => {
+        try {
+          const id = req.params.id;
+          const result = await tuitorCollections.deleteOne({
+            _id: new ObjectId(id),
+          });
+          if (result.deletedCount) {
+            return res.send({
+              success: true,
+              message: 'Tutor application deleted',
+            });
+          }
+          res.status(404).send({ success: false, message: 'Tutor not found' });
+        } catch (err) {
+          console.error(err);
+          res.status(500).send({ success: false, message: 'Server error' });
+        }
+      }
+    );
 
     // Get single tutor application
-    // app.get(
-    //   '/tutorApplications/:id',
-    //   verifyFBToken,
-    //   verifyAdmin,
-    //   async (req, res) => {
-    //     try {
-    //       const id = req.params.id;
-    //       const tutor = await tuitorCollections.findOne({
-    //         _id: new ObjectId(id),
-    //       });
-    //       if (!tutor)
-    //         return res
-    //           .status(404)
-    //           .send({ success: false, message: 'Tutor not found' });
-    //       res.send({ success: true, tutor });
-    //     } catch (err) {
-    //       console.error(err);
-    //       res.status(500).send({ success: false, message: 'Server error' });
-    //     }
-    //   }
-    // );
+    app.get(
+      '/tutorApplications/:id',
+      verifyFBToken,
+      verifyAdmin,
+      async (req, res) => {
+        try {
+          const id = req.params.id;
+          const tutor = await tuitorCollections.findOne({
+            _id: new ObjectId(id),
+          });
+          if (!tutor)
+            return res
+              .status(404)
+              .send({ success: false, message: 'Tutor not found' });
+          res.send({ success: true, tutor });
+        } catch (err) {
+          console.error(err);
+          res.status(500).send({ success: false, message: 'Server error' });
+        }
+      }
+    );
 
     app.get('/tutorApplications', async (req, res) => {
       const { status, district, workStatus } = req.query;
@@ -463,10 +467,10 @@ app.get('/studentInfo/tutor', async (req, res) => {
     });
 
     // Send a ping to confirm a successful connection
-    await client.db('admin').command({ ping: 1 });
-    console.log(
-      'Pinged your deployment. You successfully connected to MongoDB!'
-    );
+    // await client.db('admin').command({ ping: 1 });
+    // console.log(
+    //   'Pinged your deployment. You successfully connected to MongoDB!'
+    // );
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
