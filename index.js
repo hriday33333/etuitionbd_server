@@ -149,6 +149,33 @@ async function run() {
       const result = await cursor.toArray();
       res.send(result);
     });
+
+   // GET assigned students for logged-in tutor
+app.get('/studentInfo/tutor', async (req, res) => {
+  try {
+    const { tutorEmail, deliveryStatus } = req.query;
+    if (!tutorEmail) return res.status(400).send({ message: 'tutorEmail is required' });
+
+    const query = {
+      tutorEmail: tutorEmail
+    };
+
+    if (deliveryStatus) query.deliveryStatus = deliveryStatus;
+
+    const students = await studentCollections.find(query).toArray();
+    console.log('Query:', query);
+    console.log('DB Result:', students);
+
+    res.send(students);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ message: 'Server Error' });
+  }
+});
+
+
+
+
     app.get('/studentInfo/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -184,13 +211,16 @@ async function run() {
       const reault = await studentCollections.updateOne(query, updatedDoc);
 
       const tuitorQuery = { _id: new ObjectId(tutorId) };
-      const tuitorUpdatedDoc={
-        $set:{
-          workStatus:'ongoing'
-        }
-      }
-      const tuitorRuselt =await tuitorCollections.updateOne(tuitorQuery,tuitorUpdatedDoc)
-      res.send(tuitorRuselt)
+      const tuitorUpdatedDoc = {
+        $set: {
+          workStatus: 'ongoing',
+        },
+      };
+      const tuitorRuselt = await tuitorCollections.updateOne(
+        tuitorQuery,
+        tuitorUpdatedDoc
+      );
+      res.send(tuitorRuselt);
     });
 
     // // new payment  api
