@@ -12,7 +12,9 @@ const admin = require('firebase-admin');
 // const serviceAccount = require('./etuitionbd-7ef5f-firebase-adminsdk-fbsvc-b4a2ccf811.json');
 // const serviceAccount = require("./firebase-admin-key.json");
 
-const decoded = Buffer.from(process.env.FB_SERVICE_KEY, 'base64').toString('utf8')
+const decoded = Buffer.from(process.env.FB_SERVICE_KEY, 'base64').toString(
+  'utf8'
+);
 const serviceAccount = JSON.parse(decoded);
 
 admin.initializeApp({
@@ -91,7 +93,13 @@ async function run() {
       res.send(result);
     });
 
-    app.get('/userInfo/:id', async (req, res) => {});
+    app.get('/userInfo/profile/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { email };
+      const user = await userCollections.findOne(query);
+      res.send(user);
+    });
+
     app.get('/userInfo/:email/role', async (req, res) => {
       const email = req.params.email;
       const query = { email };
@@ -154,31 +162,29 @@ async function run() {
       res.send(result);
     });
 
-   // GET assigned students for logged-in tutor
-app.get('/studentInfo/tutor', async (req, res) => {
-  try {
-    const { tutorEmail, deliveryStatus } = req.query;
-    if (!tutorEmail) return res.status(400).send({ message: 'tutorEmail is required' });
+    // GET assigned students for logged-in tutor
+    app.get('/studentInfo/tutor', async (req, res) => {
+      try {
+        const { tutorEmail, deliveryStatus } = req.query;
+        if (!tutorEmail)
+          return res.status(400).send({ message: 'tutorEmail is required' });
 
-    const query = {
-      tutorEmail: tutorEmail
-    };
+        const query = {
+          tutorEmail: tutorEmail,
+        };
 
-    if (deliveryStatus) query.deliveryStatus = deliveryStatus;
+        if (deliveryStatus) query.deliveryStatus = deliveryStatus;
 
-    const students = await studentCollections.find(query).toArray();
-    console.log('Query:', query);
-    console.log('DB Result:', students);
+        const students = await studentCollections.find(query).toArray();
+        console.log('Query:', query);
+        console.log('DB Result:', students);
 
-    res.send(students);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send({ message: 'Server Error' });
-  }
-});
-
-
-
+        res.send(students);
+      } catch (err) {
+        console.error(err);
+        res.status(500).send({ message: 'Server Error' });
+      }
+    });
 
     app.get('/studentInfo/:id', async (req, res) => {
       const id = req.params.id;
