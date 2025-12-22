@@ -365,6 +365,20 @@ async function run() {
 
     // tutorApplications api
 
+    // GET all tutor applications (admin)
+    app.get(
+      '/tutorApplications',
+      verifyFBToken,
+      verifyAdmin,
+      async (req, res) => {
+        const result = await tuitorCollections
+          .find()
+          .sort({ createdAt: -1 })
+          .toArray();
+        res.send(result);
+      }
+    );
+
     app.post('/tutorApplications', async (req, res) => {
       const tuitor = req.body;
       tuitor.status = 'pending';
