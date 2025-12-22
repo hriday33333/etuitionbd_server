@@ -368,8 +368,7 @@ async function run() {
     // GET all tutor applications (admin)
     app.get(
       '/tutorApplications',
-      verifyFBToken,
-      verifyAdmin,
+
       async (req, res) => {
         const result = await tuitorCollections
           .find()
