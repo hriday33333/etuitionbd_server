@@ -386,6 +386,18 @@ async function run() {
       res.send(result);
     });
 
+    app.get('/tutorApplications', async (req, res) => {
+      const { status } = req.query; // optional query param
+      const query = {};
+      if (status) query.status = status;
+
+      const result = await tuitorCollections
+        .find(query)
+        .sort({ createdAt: -1 })
+        .toArray();
+      res.send(result);
+    });
+
     app.patch(
       '/tutorApplications/:id',
       verifyFBToken,
